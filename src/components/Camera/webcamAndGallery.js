@@ -5,12 +5,14 @@ import ExpansionPanel from '@material-ui/core/ExpansionPanel';
 import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import ImageCard from '../imageCard.js';
+import ImageCard from './imageCard.js';
 import Grid from '@material-ui/core/Grid';
 import Container from '@material-ui/core/Container';
+
+import { withAuthorization, AuthUserContext } from '../Session';
 import "react-image-gallery/styles/css/image-gallery.css";
 
-export default class MyCamera extends React.Component{
+class MyCamera extends React.Component{
 	constructor (props)
 	{
 		super(props)
@@ -116,8 +118,8 @@ export default class MyCamera extends React.Component{
 
 	  render() {
 		  const videoConstraints = {
-			  width: 1920,
-			  heigh: 1080,
+			  width: 1080,
+			  heigh: 720,
 			  facingMode: "user"
 		  };
 		  return (
@@ -125,12 +127,14 @@ export default class MyCamera extends React.Component{
 					<div className="Smile">
 						<Webcam
 						audio={false}
-						height={710}
+						height={720}
 						ref={this.setRef}
 						screenshotFormat="image/jpeg"
 						width={1080}
 						videoConstraints={videoConstraints}
 						/>
+					</div>
+					<div style={{margin: 'auto', alignContent: 'center'}}>
 						<button onClick={this.capture}>Capture photo</button>
 					</div>
 					<div className="Gallery" style={{
@@ -191,3 +195,7 @@ export default class MyCamera extends React.Component{
 		  	);
 	 	 }
 }
+
+const condition = authUser => !!authUser;
+
+export default withAuthorization(condition)(MyCamera);

@@ -1,36 +1,18 @@
-import React from 'react';
+import React, { Component } from 'react';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import TextField from '@material-ui/core/TextField';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Checkbox from '@material-ui/core/Checkbox';
-import Link from '@material-ui/core/Link';
 import Grid from '@material-ui/core/Grid';
-import Box from '@material-ui/core/Box';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, withStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import ButtonBase from '@material-ui/core/ButtonBase';
-import Signin from './signin.js';
-import ReactDOM from 'react-dom';
-
-function MadeWithLove() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Built with love by the '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Material-UI
-      </Link>
-      {' team.'}
-    </Typography>
-  );
-};
-
-function SwitchToSignin(event) {
-	ReactDOM.render(<Signin />, document.getElementById('root'));
-};
+import { Link, withRouter } from 'react-router-dom';
+import { withFirebase } from '../Firebase';
+import { compose } from 'recompose';
+import * as ROUTES from '../../constants/routes';
 
 const useStyles = makeStyles(theme => ({
   '@global': {
@@ -57,8 +39,63 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export default function SignUp() {
-  const classes = useStyles();
+const INITIAL_STATE = {
+	email: '',
+	passwordOne: '',
+	passwordTwo: '',
+	error: null,
+};
+
+const SignUpPage = () => {
+	const classes = useStyles();
+	return (
+	<div>
+		<SignUpForm classes={classes}/>
+	</div>
+	)
+}
+
+
+class SignUpFormBase extends Component {
+
+	constructor(props){
+		super(props);
+		this.state = { ...INITIAL_STATE };
+	}
+	
+	onSubmit = event => {
+		const { email, passwordOne } = this.state;
+
+		this.props.firebase
+			.doCreateUserWithEmailAndPassword(email, passwordOne)
+			.then(authUser => {
+				this.setState({ ...INITIAL_STATE });
+				this.props.history.push(ROUTES.HOME);
+			})
+			.catch(error => {
+				this.setState({ error });
+			});
+
+		event.preventDefault();
+	};
+
+	onChange = event => {
+		this.setState({ [event.target.name]: event.target.value });
+	};
+
+	render() {
+		const classes = this.props.classes;
+	const {
+			email,
+			passwordOne,
+			passwordTwo,
+			error,
+		} = this.state;
+
+	const isInvalid = 
+		passwordOne !== passwordTwo ||
+		passwordOne === '' ||
+		email === '';
 
   return (
 	  <div>
@@ -71,36 +108,15 @@ export default function SignUp() {
         <Typography component="h1" variant="h5">
           Sign up
         </Typography>
-        <form className={classes.form} noValidate>
+        <form className={classes.form} onSubmit={this.onSubmit} noValidate>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                autoComplete="fname"
-                name="firstName"
-                variant="outlined"
-                required
-                fullWidth
-                id="firstName"
-                label="First Name"
-                autoFocus
-				/>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                variant="outlined"
-                required
-                fullWidth
-                id="lastName"
-                label="Last Name"
-                name="lastName"
-                autoComplete="lname"
-				/>
-            </Grid>
             <Grid item xs={12}>
               <TextField
                 variant="outlined"
                 required
-                fullWidth
+				fullWidth
+				value={email}
+				onChange={this.onChange}
                 id="email"
                 label="Email Address"
                 name="email"
@@ -112,23 +128,34 @@ export default function SignUp() {
                 variant="outlined"
                 required
                 fullWidth
-                name="password"
-                label="Password"
+                name="passwordOne"
+				label="Password"
+				value={passwordOne}
+				onChange={this.onChange}
                 type="password"
                 id="password"
                 autoComplete="current-password"
 				/>
             </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={<Checkbox value="allowExtraEmails" color="primary" />}
-                label="I want to receive inspiration, marketing promotions and updates via email."
+			<Grid item xs={12}>
+              <TextField
+                variant="outlined"
+                required
+                fullWidth
+                name="passwordTwo"
+				label="Confirm Password"
+				value={passwordTwo}
+				onChange={this.onChange}
+                type="password"
+                id="passwordTwo"
+                autoComplete="current-password"
 				/>
             </Grid>
           </Grid>
           <Button
             type="submit"
-            fullWidth
+			fullWidth
+			disabled={isInvalid}
             variant="contained"
             color="primary"
             className={classes.submit}
@@ -137,15 +164,22 @@ export default function SignUp() {
           </Button>
           <Grid container justify="flex-end">
             <Grid item>
-              <ButtonBase onClick={SwitchToSignin} >Already have an account? Sign in</ButtonBase>
+              <ButtonBase component={Link} to={ROUTES.SIGN_IN} >Already have an account? Sign in</ButtonBase>
             </Grid>
           </Grid>
+	{error && <p>{error.message}</p>}
         </form>
       </div>
-      <Box mt={5}>
-        <MadeWithLove />
-      </Box>
     </Container>
 			</div>
   );
+	}
 }
+const SignUpForm = compose(
+	withRouter,
+	withFirebase,
+)(SignUpFormBase);
+
+export default SignUpPage;
+
+export { SignUpForm };
