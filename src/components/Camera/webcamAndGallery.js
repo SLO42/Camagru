@@ -9,7 +9,7 @@ import ImageCard from './imageCard.js';
 import Grid from '@material-ui/core/Grid';
 import Container from '@material-ui/core/Container';
 
-import { withAuthorization, AuthUserContext } from '../Session';
+import { withAuthorization } from '../Session';
 import "react-image-gallery/styles/css/image-gallery.css";
 
 class MyCamera extends React.Component{

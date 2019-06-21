@@ -5,27 +5,25 @@ import MenuIcon from '@material-ui/icons/Menu';
 import Menu from '@material-ui/core/Menu';
 //import MenuList from '@material-ui/core/MenuList'
 import PopupState, { bindTrigger, bindMenu } from 'material-ui-popup-state';
+import { Link } from 'react-router-dom';
 
 import SignOutButton from '../SignOut';
-import { Link } from 'react-router-dom';
+import * as ROLES from '../../constants/roles';
 import * as ROUTES from '../../constants/routes';
 import { AuthUserContext } from '../Session';
 
 
   const MyMenuButton = () => (
-	  <div>
-			<AuthUserContext.Consumer>
-				{authUser =>
-					authUser ? <MyMenuButtonAuth /> : <MyMenuButtonNonAuth />
-				}
-			</AuthUserContext.Consumer>
-	  </div>
+		<AuthUserContext.Consumer>
+			{authUser =>
+				authUser ? (<MyMenuButtonAuth authUser={authUser} /> ) : <MyMenuButtonNonAuth />
+			}
+		</AuthUserContext.Consumer>
 	  );
 	
 	  
-const MyMenuButtonAuth = () => {
+const MyMenuButtonAuth = ({ authUser }) => {
 	  
-
 		let selectedFile = null;
 
 		const fileChangedHandler = event => {
@@ -56,9 +54,12 @@ const MyMenuButtonAuth = () => {
 						<MenuItem onClick={function(event) {popupState.close();}} component={Link} to={ROUTES.ACCOUNT}>
 							Account
 						</MenuItem>
-						<MenuItem onClick={function(event) {popupState.close();}} component={Link} to={ROUTES.ADMIN}>
+						{!!authUser.roles[ROLES.ADMIN] && 
+						(
+							<MenuItem onClick={function(event) {popupState.close();}} component={Link} to={ROUTES.ADMIN}>
 							admin
-						</MenuItem>
+							</MenuItem>
+						)}
 						<MenuItem onClick={function(event) {popupState.close();}}>
 							<SignOutButton />
 						</MenuItem>

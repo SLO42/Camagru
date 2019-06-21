@@ -1,5 +1,6 @@
 import app from 'firebase/app';
 import 'firebase/auth';
+import 'firebase/database';
 
 const config = {
 	apiKey: process.env.REACT_APP_API_KEY,
@@ -16,6 +17,10 @@ class Firebase {
 		app.initializeApp(config);
 
 		this.auth = app.auth();
+		this.db = app.database();
+
+		this.googleProvider = new app.auth.GoogleAuthProvider();
+		this.facebookProvider = new app.auth.FacebookAuthProvider();
 	}
 
 	doCreateUserWithEmailAndPassword = (email, password) =>
@@ -24,6 +29,12 @@ class Firebase {
 	doSignInWithEmailAndPassword = (email, password) =>
 		this.auth.signInWithEmailAndPassword(email, password);
 
+	doSignInWithGoogle = () =>
+		this.auth.signInWithPopup(this.googleProvider);
+
+	doSignInWithFacebook = () => 
+		this.auth.signInWithPopup(this.facebookProvider);
+
 	doSignOut = () => this.auth.signOut();
 
 	doPasswordReset = email =>
@@ -31,6 +42,36 @@ class Firebase {
 	
 	doPasswordUpdate = password =>
 		this.auth.currentUser.updatePassword(password);
+
+	onAuthUserListener = (next, fallback) =>
+		this.auth.onAuthStateChanged(authUser => {
+			if (authUser) {
+				this.user(authUser.uid)
+					.once('value')
+					.then(snapshot => {
+						const dbUser = snapshot.val();
+
+						if (!dbUser.roles) {
+							dbUser.roles = {};
+						}
+
+						authUser = {
+							uid: authUser.uid,
+							email: authUser.email,
+							...dbUser,
+						};
+
+						next(authUser);
+					});
+			} else {
+				fallback();
+			}
+		});
+
+	user = uid => this.db.ref(`users/${uid}`);
+
+	users = () => this.db.ref('users');
+
 }
 
 export default Firebase;

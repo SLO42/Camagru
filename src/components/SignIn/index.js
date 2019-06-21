@@ -14,6 +14,93 @@ import { compose } from 'recompose';
 import { withFirebase } from '../Firebase';
 import * as ROUTES from '../../constants/routes';
 
+
+class SignInWithFacebookBase extends Component {
+	constructor(props){
+		super(props);
+
+		this.state = { error: null };
+	}
+
+	onSubmit = event => {
+		this.props.firebase
+			.doSignInWithFacebook()
+			.then(socialAuthUser => {
+				return this.props.firebase
+					.user(socialAuthUser.user.uid)
+					.set({
+						username: socialAuthUser.additionalUserInfo.profile.email,
+						email: socialAuthUser.additionalUserInfo.profile.email,
+						roles: {},
+					});
+				})
+			.then(() => {
+				this.setState({ error: null });
+				this.props.history.push(ROUTES.HOME);
+			})
+			.catch(error => {
+				this.setState({ error });
+			});
+
+			event.preventDefault();
+	};
+
+	render() {
+		const { error } = this.state;
+
+		return (
+			<form onSubmit={this.onSubmit}>
+				<Button type="submit">Sign In with Facebook</Button>
+
+				{error && <p>{error.message}</p>}
+			</form>
+		);
+	}
+}
+
+class SignInWithGoogleBase extends Component {
+	constructor(props) {
+		super(props)
+		
+		this.state = { error: null };
+	}
+
+	onSubmit = event => {
+		this.props.firebase
+			.doSignInWithGoogle()
+			.then(socialAuthUser => {
+				return this.props.firebase
+					.user(socialAuthUser.user.uid)
+					.set({
+						username: socialAuthUser.user.email,
+						email: socialAuthUser.user.email,
+						roles: {},
+					});
+				})
+			.then(() => {
+			this.setState({ error: null });
+			this.props.history.push(ROUTES.HOME);
+			})
+			.catch(error => {
+				this.setState({ error });
+			});
+			
+		event.preventDefault();
+	};
+
+	render() {
+		const { error } = this.state;
+
+		return (
+			<form onSubmit={this.onSubmit}>
+				<Button type="submit">Sign In with Google</Button>
+
+				{error && <p>{error.message}</p>}
+			</form>
+		);
+	}
+}
+
 const useStyles = makeStyles(theme => ({
   root: {
     height: '100vh',
@@ -162,6 +249,10 @@ class SignInFormBase extends Component {
             </Grid>
 			{error && <p>{error.message}</p>}
           </form>
+		<Grid item xs={3}>
+			<SignInWithGoogle />
+			<SignInWithFacebook />
+		</Grid>
         </div>
       </Grid>
     </Grid>
@@ -169,11 +260,22 @@ class SignInFormBase extends Component {
   );
 }
 }
+
 const SignInForm = compose(
 	withRouter,
 	withFirebase,
 )(SignInFormBase);
 
+const SignInWithGoogle = compose(
+	withRouter,
+	withFirebase,
+)(SignInWithGoogleBase);
+
+const SignInWithFacebook = compose(
+	withRouter,
+	withFirebase,
+)(SignInWithFacebookBase);
+
 export default SignInPage;
 
-export { SignInForm };
+export { SignInForm, SignInWithGoogle, SignInWithFacebook };

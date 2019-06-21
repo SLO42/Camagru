@@ -10,8 +10,10 @@ import { makeStyles, withStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import { Link, withRouter } from 'react-router-dom';
-import { withFirebase } from '../Firebase';
 import { compose } from 'recompose';
+
+import * as ROLES from '../../constants/roles';
+import { withFirebase } from '../Firebase';
 import * as ROUTES from '../../constants/routes';
 
 const useStyles = makeStyles(theme => ({
@@ -43,6 +45,7 @@ const INITIAL_STATE = {
 	email: '',
 	passwordOne: '',
 	passwordTwo: '',
+	isAdmin: false,
 	error: null,
 };
 
@@ -64,10 +67,25 @@ class SignUpFormBase extends Component {
 	}
 	
 	onSubmit = event => {
-		const { email, passwordOne } = this.state;
+		const { email, passwordOne, isAdmin } = this.state;
+
+		const roles = {};
+
+		if (isAdmin) {
+			roles[ROLES.ADMIN] = ROLES.ADMIN;
+		}
 
 		this.props.firebase
 			.doCreateUserWithEmailAndPassword(email, passwordOne)
+			.then(authUser => {
+				return this.props.firebase
+					.user(authUser.user.uid)
+					.set({
+						username: email,
+						email,
+						roles,
+					});
+			})
 			.then(authUser => {
 				this.setState({ ...INITIAL_STATE });
 				this.props.history.push(ROUTES.HOME);
@@ -83,12 +101,17 @@ class SignUpFormBase extends Component {
 		this.setState({ [event.target.name]: event.target.value });
 	};
 
+	onChangeCheckbox = event => {
+		this.setState({ [event.target.name]: event.target.checked });
+	};
+
 	render() {
 		const classes = this.props.classes;
 	const {
 			email,
 			passwordOne,
 			passwordTwo,
+			isAdmin,
 			error,
 		} = this.state;
 
@@ -152,6 +175,15 @@ class SignUpFormBase extends Component {
 				/>
             </Grid>
           </Grid>
+		  <label>
+			Admin:
+			<input
+				name="isAdmin"
+				type="checkbox"
+				checked={isAdmin}
+				onChange={this.onChangeCheckbox}
+			/>
+		  </label>
           <Button
             type="submit"
 			fullWidth
