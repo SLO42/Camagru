@@ -2,6 +2,7 @@ import app from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
 
+
 const config = {
 	apiKey: process.env.REACT_APP_API_KEY,
 	authDomain: process.env.REACT_APP_AUTH_DOMAIN,
@@ -60,17 +61,9 @@ class Firebase {
 					.once('value')
 					.then(snapshot => {
 						const dbUser = snapshot.val();
-						const comment = { commentId: null, commentMessage: null, time: null };
-						const dbGallery = [
-							{ src: null, toc: null, likes: 0, comments: [comment] }
-						]
 
 						if (!dbUser.roles) {
 							dbUser.roles = {};
-						}
-
-						if (!dbUser.gallery) {
-							dbUser.gallery = dbGallery;
 						}
 
 						authUser = {
@@ -88,38 +81,53 @@ class Firebase {
 			}
 		});
 
-	doAddLiked = (imgObject, authUser) => {
-		let firstCut = imgObject.src.slice(11, 15);
-		let secondCut = imgObject.src.slice(imgObject.src.length - 25, imgObject.src.length - 11);
-		let sliced = firstCut + secondCut;
-		sliced = sliced.replace(/\//g, "");
-		this.gallery(authUser.uid).child(sliced).set(imgObject);
-	}
-
-	doRemoveLiked = (imgObject, authUser) => {
-		let firstCut = imgObject.src.slice(11, 15);
-		let secondCut = imgObject.src.slice(imgObject.src.length - 25, imgObject.src.length - 11);
-		let sliced = firstCut + secondCut;
-		sliced = sliced.replace(/\//g, "");
-
-		this.gallery(authUser.uid).child(sliced).set(null);
-	}
 
 	
+
+	doAddLiked = (imgObject) => {
+		this.gallery().child(imgObject.iid).set(imgObject);
+	}
+
+	doRemoveLiked = (imgObject) => {
+		if (window.confirm("Are you sure you want to delete the image?"))
+			this.gallery().child(imgObject.iid).set(null);
+		else ;
+	}
+
+	updateDesc = ( iid, txt ) => this.comment(iid, 0).child("text").set(txt);
+
+	updateTitle = ( iid, txt ) => this.image(iid).child("title").set(txt);
+
+	doWriteComment = (iid, txt, uid) => {
+		const comRef = this.comments(iid);
+		let i = 0;
+		
+		comRef.on("value", snapshot => {
+			Object.entries(snapshot).map(e => i++ )
+		});
+
+		comRef.child(`${i}`).set({
+			text: txt,
+			time: new Date().toLocaleDateString(),
+			userId: uid,
+		})
+	}
 
 	user = uid => this.db.ref(`users/${uid}`);
 
 	users = () => this.db.ref('users');
 	
-	message = uid => this.db.ref(`messages/${uid}`);
+	// message = uid => this.db.ref(`messages/${uid}`);
 
-	messages = () => this.db.ref('messages');
+	// messages = () => this.db.ref('messages');
 	
-	gallery = uid => this.db.ref(`users/${uid}/gallery`);
+	gallery = () => this.db.ref(`gallery`);
 
-	image = (uid, src) => this.db.ref(`users/${uid}/gallery/${src}`);
+	image = iid => this.db.ref(`gallery/${iid}`);
 
-	comment = (uid, src) => this.db.ref(`users/${uid}/gallery/${src}/comments`)
+	comments = iid => this.db.ref(`gallery/${iid}/comments`);
+
+	comment = (iid, n) => this.db.ref(`gallery/${iid}/comments/${n}`);
 
 }
 

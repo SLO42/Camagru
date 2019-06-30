@@ -14,6 +14,7 @@ import { withFirebase } from '../Firebase';
 import { withAuthorization, AuthUserContext } from '../Session';
 import "react-image-gallery/styles/css/image-gallery.css";
 
+
 class MyCamera extends React.Component{
 	constructor (props)
 	{
@@ -41,6 +42,7 @@ class MyCamera extends React.Component{
 			handleLike: async ( src, toc, selected, authUser ) => {
 				if (this.state.images[selected].liked === false)
 				{
+					const iId = selected + toc.replace(/\//g, '-').replace(/PM|AM/g, '') + authUser.email.slice(0-5);
 					const imgobj = {
 						src,
 						toc,
@@ -48,6 +50,8 @@ class MyCamera extends React.Component{
 						liked: true
 					}
 					const newimg = {
+						iid: iId,
+						title: window.prompt("Enter a title for your new image", iId),
 						src,
 						toc,
 						likes: 1,
@@ -60,7 +64,7 @@ class MyCamera extends React.Component{
 					await this.state.saved.push(imgobj)
 					this.state.images[selected].liked = true;
 					this.props.firebase
-						.doAddLiked(newimg, authUser);
+						.doAddLiked(newimg);
 					await this.setState(this.state)
 					return (imgobj);
 				}

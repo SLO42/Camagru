@@ -3,17 +3,20 @@ import { compose } from 'recompose';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import { makeStyles } from '@material-ui/core/styles';
+import TextField from '@material-ui/core/TextField';
 import Grid from '@material-ui/core/Grid';
 import CardMedia from '@material-ui/core/CardMedia';
 import CardActions from '@material-ui/core/CardActions';
+import Box from '@material-ui/core/Box';
 
 import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import red from '@material-ui/core/colors/red';
 import FavoriteIcon from '@material-ui/icons/Favorite';
 import ShareIcon from '@material-ui/icons/Share';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import SaveIcon from '@material-ui/icons/Save';
+import CommentIcon from '@material-ui/icons/Comment';
+import SettingsIcon from '@material-ui/icons/Settings';
 import CardHeader from '@material-ui/core/CardHeader';
 
 
@@ -25,11 +28,14 @@ import {
 import { Switch, Route, Link } from 'react-router-dom';
 import * as ROUTES from '../../constants/routes';
 import { withFirebase } from '../Firebase';
-import { GridList, Input } from '@material-ui/core';
+import { GridList, GridListTile } from '@material-ui/core';
+
 
 const useStyles = makeStyles(theme => ({
 	card: {
-	  maxWidth: 345,
+	  minWidth: 420,
+	  maxWidth: 420,
+	  height: 460,
 	  backgroundColor: 'transparent'
 	},
 	media: {
@@ -50,35 +56,59 @@ const useStyles = makeStyles(theme => ({
 	  backg4roundColor: red[500],
 	},
 	root: {
+		paddingBottom: 5,
+		outlineColor: 'black',
 		justifyContent: 'center',
-		margin: '+2px',
 	},
+	images: {
+		maxWidth: 420,
+		minWidth: 420,
+		// position: "absolute",
+		margin: "auto",
+	},
+	pageMain: {
+		minWidth: '720vl',
+	  	backgroundColor: 'white',
+	},
+	pageMedia: {
+		height: 0,
+
+		paddingTop: '56.25%',
+	},
+
   }));
 
 
 const ImageCard = ({ imageObject, authUser }) => {
 	const classes = useStyles();
+	let desc = imageObject.comments[0].text;
+	let oUid = imageObject.uid;
+
 
 	return (
-		<Card className={classes.card}>
+		<Card className={classes.card} style={{height: '490px'}}>
       <CardHeader
         action={
-			<IconButton aria-label="Settings">
-            <MoreVertIcon />
+			<IconButton aria-label="Settings" component={Link} to={{
+				pathname: `${ROUTES.HOME}/${imageObject.uid}`,
+				state: { imageObject, authUser },
+			}}>
+            <SettingsIcon />
           </IconButton>
-        }
-        title={<Input defaultValue={imageObject.uid}/>}
+		}
+		style={{whiteSpace: 'nowrap', fontSize: '1em'}}
+        title={imageObject.uid ? oUid.length > 28 ? oUid.substr(0, 28) + "..." : oUid : null}
 		/>
       <CardMedia className={classes.media}
 		image={imageObject.src}
 		title={imageObject.toc}
 		/>
       <CardContent>
-        <Typography variant="body2" color="textSecondary" component="p">
-          Here you can make actions for the image and decide how you want to do the stuff
+        <Typography variant="body2" color="textSecondary" component="p" style={{wordWrap: 'none',}}>
+          {desc ? desc.length > 150 ? (desc.substr(0, 150) + "...") : (desc) : "You can edit this field in the picture settings!" }
         </Typography>
       </CardContent>
-      <CardActions disableSpacing>
+      <CardActions disableSpacing style={{display: 'inline-flex', position: 'absolute', bottom: 0, right: '33%'}}>
 		<IconButton aria-label="Add to favorites" 
 			// onClick={() => {
 				
@@ -88,7 +118,7 @@ const ImageCard = ({ imageObject, authUser }) => {
 			// }}
 			color={ 'primary' }
 		>
-          <FavoriteIcon />{imageObject.likes}
+          <FavoriteIcon /> <small><small>{imageObject.likes}</small></small>
         </IconButton>
         <IconButton aria-label="Share">
           <ShareIcon />
@@ -96,10 +126,12 @@ const ImageCard = ({ imageObject, authUser }) => {
         <IconButton
           component={Link} to={{
 			  pathname: `${ROUTES.HOME}/${imageObject.uid}`,
-			  state: { imageObject },
-			  props: { authUser },
+			  state: { imageObject, authUser },
 		  }}>
-          <ExpandMoreIcon />
+          <CommentIcon />
+		  <div style={{padding: `2px`}}>
+		  	{imageObject.comments.length - 1}
+		  </div>
         </IconButton>
       </CardActions>
     </Card>
@@ -111,11 +143,173 @@ const HomeHome = () => (
 		{authUser => (
 					<Images authUser={authUser} />
 			)}
-			</AuthUserContext.Consumer>
+			</AuthUserContext.Consumer> 
 )
 
+const CommentList = ({ messages }) => (
+	<ul>
+		{messages.map(message => (
+			<CommentItem key={message.uid} message={message} />
+		))}
+	</ul>
+)
 
-const HomePage = () => (
+const CommentItem = ({ message }) => (
+	<li>
+		<strong>{message.userId}</strong> {message.text}
+	</li>
+)
+
+class CommentBase extends Component{
+	constructor(props){
+		super(props);
+
+		this.state = {
+			text: '',
+			loading: false,
+			messages: [],
+		};
+	}
+
+	onChangeText = event => {
+		this.setState({ text: event.target.value });
+	};
+
+	onCreateComment = event => {
+		this.props.firebase.doWriteComment()
+	}
+
+	componentDidMount() {
+		this.setState({ loading: true });
+
+		this.props.firebase.comments(this.props.authUser.uid, this.props.imageObject.uid)
+			.on('value', snapshot => {
+				const commentObject = snapshot.val();
+
+				if (commentObject) {
+					const messageList = Object.keys(commentObject.map)(key => ({
+						...commentObject[key],
+						uid: key,
+					}));
+
+					this.setState({ 
+						messages: messageList,
+						loading: false,
+					});
+				} else {
+					this.setState({ messages: null, loading: false });
+				}
+			});
+	}
+
+	componentWillUnmount() {
+		this.props.firebase.comments(this.props.authUser.uid, this.props.imageObject.uid).off();
+	}
+
+	render () {
+		const { text, messages, loading } = this.state;
+
+		return (
+			<div>
+				{loading && <div>Loading ...</div>}
+
+				{messages ? (
+					<CommentList messages={messages} />
+
+				) : (
+					<div> There are no messages ... </div>
+				)}
+				<form onSubmit={this.onCreateComment}>
+					<input type="text" value={text} onChange={this.onChangeText} />
+					<button type="submit"> Send </button>
+				</form>
+			</div>
+		)
+	}
+
+}
+
+
+
+const MainCard = ({ imageObject, doUpdateDesc, doUpdateUid }) => {
+	const classes = useStyles();
+
+	const [values, setValues] = React.useState({
+		name: '',
+		title: imageObject.uid,
+		multiline: imageObject.comments[0].text,
+	  });
+	
+	const handleChange = name => event => {
+		setValues({ ...values, [name]: event.target.value });
+	  };
+
+	const iconAction = () => (
+		<IconButton aria-label="Settings" onClick={ async () => {
+			if (window.confirm("would you like to save something?")){
+				if(window.confirm("What would you like to update? Y = Desc n Title | N = more options ")){
+					await doUpdateDesc(values.multiline);
+					await doUpdateUid(values.title);
+				} else {
+					if (window.confirm("Update title?")){
+						await doUpdateUid(values.title);
+					} else {
+						if (window.confirm("Update Desc?")){
+							await doUpdateDesc(values.multiline);
+						} else {
+							return ;
+						}
+					}
+				}
+			} else {
+				return ;
+			}
+
+		}
+			}>
+			<SaveIcon />
+		</IconButton>
+	)
+
+	return(
+		<div>
+			<Grid container>
+				<Card className={classes.pageMain} style={{minWidth: '100%'}}>
+					<CardHeader action={iconAction()} title={
+						<TextField id="Title" label="Title {Limit : 28 Characters}" fullWidth onChange={handleChange('title')} value={values.title} />
+					}/>
+					<CardMedia className={classes.pageMedia} image={imageObject.src} title={imageObject.uid} />
+					<CardContent>
+						{/* <Typography variant="body2" component="p"> */}
+						<TextField
+							id="Description Box" label="Description" multiline fullWidth rowsMax="4"
+							value={values.multiline} onChange={handleChange('multiline')}
+							className={classes.textField} margin="normal"
+							variant="filled"
+						/>
+
+						<Grid container>
+
+							<Card className={classes.commentMain} style={{minWidth: '98%', alignSelf: 'center'}} >
+								<CardContent>
+
+								</CardContent>
+							</Card>
+						</Grid>
+							{`${imageObject.comments[0].text}`}
+						
+					</CardContent>
+				{/* This is where i would map the comments by comment order giving timestamp and metadata */}
+				</Card>
+			</Grid>
+		</div>
+	);
+	}
+// const MainCard = withStyles(useStyles)(MainCardBase);
+
+const HomePage = () => {
+
+	return(
 			<div>
 				<h1>Home Page</h1>
 					<p>The Home Page is Avaialbe to Signed In Users Only</p>
@@ -124,29 +318,34 @@ const HomePage = () => (
 					<Route exact path={ROUTES.MYIMAGE} component={SinglePage} />
 				</Switch>
 			</div>
-);
+)};
 
-const ImageList = ({ images, authUser }) => {
+const ImageList = ({ images, authUser, firebase }) => {
 	const classes = useStyles();
+
+	//  const refresh = () => {
+	// 	firebase.gallery(authUser.uid).child(image.uid).set(null);
+
+	//  }
 
 	return(
 		<div>
-			<GridList cols={3} spacing={0} cellHeight={400} classes={{ root: classes.root }}>
-			{images.map(image => (
-					<ImageCard imageObject={image} authUser={authUser} />
+			<GridList cols={3} spacing={0} cellHeight={500} classes={{ root: classes.root }}>
+			{images.map(image => 
+				image.src ? (
+				<GridListTile key={image.uid} style={{minWidth: `500px`}} >
+					<Box border={2} classes={{ root: classes.images }}>
+						<ImageCard imageObject={image} authUser={authUser} />
+					</Box>
+				</GridListTile>
 				// <Grid item >
 				// </Grid>
-			))}
+			) : (null)
+				)}
 			</GridList>
 		</div>
 	);
 }
-
-const iconAction = () => (
-	<IconButton aria-label="Settings">
-		<MoreVertIcon />
-	</IconButton>
-)
 
 // const ImageItem = ({ imageObject }) => (
 // 	<div>
@@ -159,12 +358,35 @@ class SinglePageBase extends Component {
 		super(props);
 
 		this.state = {
+			title: '',
+			desc: '',
 			loading: false,
 			imageObject: null,
+			doUpdateDesc: txt => {
+				let { imageObject } = this.state;
+				imageObject.comments[0].text = txt;
+				this.props.firebase.updateDesc(this.state.authUser.uid, this.state.imageObject.uid, txt);
+
+				this.setState({ imageObject });
+			},
+			doUpdateUid: txt => {
+				let { imageObject } = this.state;
+				this.props.firebase.updateTitle(this.state.authUser.uid, imageObject, txt);
+				imageObject.uid = txt;
+
+				this.setState({ imageObject });
+			},
+			writeComment: txt => { 
+				this.props.firebase.doWriteComment(this.state.imageObject.iid, txt, this.state.authUser.uid);
+			},
 			...props.location.state,
 		};
 
 	}
+
+	// doUpdateDesc = event => {
+	// 	this.state.firebase.updateDesc(this.state.authUser.uid, this.state.imageObject.uid, event.target.value);
+	// }
 
 	componentDidMount() {
 		if (this.state.imageObject) {
@@ -173,7 +395,7 @@ class SinglePageBase extends Component {
 		this.setState({ loading: true });
 		
 		this.props.firebase
-			.image(this.props.authUser.uid, this.props.match.params.id)
+			.image(this.state.authUser.uid, this.props.match.params.id)
 			.on('value', snapshot => {
 				this.setState({
 					imageObject: snapshot.val(),
@@ -183,24 +405,23 @@ class SinglePageBase extends Component {
 	}
 
 	componentWillUnmount() {
-		this.props.firebase.image(this.props.authUser.uid, this.props.match.params.id).off();
+		this.props.firebase.image(this.state.authUser.uid, this.props.match.params.id).off();
 	}
 
 	render() {
-		const { imageObject } = this.state;
-		const classes = useStyles();
+		const { imageObject, doUpdateDesc, doUpdateUid } = this.state;
+
 
 		return (
 			<div>
-				<Grid container>
-					<Card className={classes.pageMain}>
-						<CardHeader action={iconAction()} title={<Input defaultValue={imageObject.uid} />}/>
-						<CardMedia className={classes.pageMedia} image={imageObject.src} title={imageObject.uid} />
-						<img src={imageObject.src} alt={imageObject.src} />
-					</Card>
-				</Grid>
+				{!this.state.loading && <MainCard 
+					imageObject={imageObject} 
+					doUpdateDesc={doUpdateDesc} 
+					doUpdateUid={doUpdateUid}
+					/>}
 			</div>
 		)}
+	
 }
 
 
@@ -236,7 +457,7 @@ class ImagesBase extends Component {
 	componentDidMount() {
 		this.setState({ loading: true });
 
-		this.props.firebase.gallery(this.props.authUser.uid).on('value', snapshot => {
+		this.props.firebase.gallery().on('value', snapshot => {
 			const imageObject = snapshot.val();
 
 			if (imageObject) {
@@ -244,8 +465,16 @@ class ImagesBase extends Component {
 					...imageObject[key],
 					uid: key,
 				}));
+				const newList = () => {
+					const toRemove = imgList.filter(image => !image.likes);
+					if (toRemove){
+						toRemove.map(image => this.props.firebase.gallery(this.props.authUser.uid).child(image.uid).set(null));
+					}
+					const user_pics = imgList.filter(image => this.props.authUser.uid === image.comments[0].userId);
+					return user_pics.filter(image => image.likes);
+				}
 				this.setState ({
-					images: imgList,
+					images: newList(),
 					loading: false,
 				});
 			} else {
@@ -267,7 +496,7 @@ class ImagesBase extends Component {
 	}
 
 	componentWillUnmount() {
-		this.props.firebase.gallery(this.props.authUser.uid).off();
+		this.props.firebase.gallery().off();
 	}
 
 	render() {
@@ -279,7 +508,7 @@ class ImagesBase extends Component {
 					<div>
 						{loading && <div>Loading ...</div>}
 						{images ? (
-							<ImageList images={images} authUser={authUser}/>
+							<ImageList images={images} authUser={authUser} firebase={this.props.firebase}/>
 						) : (
 							<div>There are no images ...</div>
 						)}
@@ -300,12 +529,13 @@ class ImagesBase extends Component {
 
 }
 
+const Comments = withFirebase(CommentBase);
 const Home = withFirebase(HomeHome);
-const SinglePage = withFirebase(SinglePageBase);
 const Images = withFirebase(ImagesBase);
 
 const condition = authUser => !!authUser;
 
+const SinglePage = (withFirebase(SinglePageBase));
 export default compose(
 	withEmailVerification,
 	withAuthorization(condition),
