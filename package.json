@@ -1,0 +1,43 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.0.0-rc.0",
+    "@material-ui/icons": "^4.0.0-rc.0",
+    "firebase": "^6.2.0",
+    "material-ui-popup-state": "^1.4.0",
+    "merge-images": "^1.1.0",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-draggable": "^3.3.0",
+    "react-image-file-resizer": "^0.2.0",
+    "react-image-gallery": "^0.8.17",
+    "react-router-dom": "^5.0.1",
+    "react-scripts": "3.0.0",
+    "react-webcam": "^1.1.1",
+    "recompose": "^0.30.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "proxy": "http://localhost:3000",
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
