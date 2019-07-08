@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+	<title>Camagru</title>
+  </head>
+  <body>
+		 <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
+
+			<!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+			
+			<noscript>You need to enable JavaScript to run this app.</noscript>
+			<div id="headerbar"></div>
+			<div id="root"></div>
+			<div id="footerbar"></div>
+			<script src="/__/firebase/6.2.0/firebase-app.js"></script>
+
+			<script src="/__/firebase/init.js"></script>
+
+			<!-- <script>
+			(function() {
+				var cors_api_host = 'cors-anywhere.herokuapp.com';
+				var cors_api_url = 'https://' + cors_api_host + '/';
+				var slice = [].slice;
+				var origin = window.location.protocol + '//' + window.location.host;
+				var open = XMLHttpRequest.prototype.open;
+				console.log("test");
+				XMLHttpRequest.prototype.open = function() {
+					var args = slice.call(arguments);
+					var targetOrigin = /^https?:\/\/([^\/]+)/i.exec(args[1]);
+					if (targetOrigin && targetOrigin[0].toLowerCase() !== origin &&
+						targetOrigin[1] !== cors_api_host) {
+						args[1] = cors_api_url + args[1];
+					}
+					return open.apply(this, args);
+				};
+			})();
+			
+			</script> -->
+    <!--
+		footer bar may be used, but as the app design is in need a change, it can and wil be done eventually.
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>

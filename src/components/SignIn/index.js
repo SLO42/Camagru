@@ -7,140 +7,66 @@ import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles, withStyles } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import { Link } from 'react-router-dom';
 import { withRouter } from 'react-router-dom';
 import { compose } from 'recompose';
 import { withFirebase } from '../Firebase';
 import * as ROUTES from '../../constants/routes';
 
+// twitter has been acting up creating weird users in firebase so 
+// for now Twitter has been disabled from login features
 
-class SignInWithFacebookBase extends Component {
-	constructor(props){
-		super(props);
+const ERROR_CODE_ACCOUNT_EXISTS = 
+	'auth/account-exists-with-different-credential';
 
-		this.state = { error: null };
-	}
-
-	onSubmit = event => {
-		this.props.firebase
-			.doSignInWithFacebook()
-			.then(socialAuthUser => {
-				return this.props.firebase
-					.user(socialAuthUser.user.uid)
-					.set({
-						username: socialAuthUser.additionalUserInfo.profile.email,
-						email: socialAuthUser.additionalUserInfo.profile.email,
-						roles: {},
-					});
-				})
-			.then(() => {
-				this.setState({ error: null });
-				this.props.history.push(ROUTES.HOME);
-			})
-			.catch(error => {
-				this.setState({ error });
-			});
-
-			event.preventDefault();
-	};
-
-	render() {
-		const { error } = this.state;
-
-		return (
-			<form onSubmit={this.onSubmit}>
-				<Button type="submit">Sign In with Facebook</Button>
-
-				{error && <p>{error.message}</p>}
-			</form>
-		);
-	}
-}
-
-class SignInWithGoogleBase extends Component {
-	constructor(props) {
-		super(props)
-		
-		this.state = { error: null };
-	}
-
-	onSubmit = event => {
-		this.props.firebase
-			.doSignInWithGoogle()
-			.then(socialAuthUser => {
-				return this.props.firebase
-					.user(socialAuthUser.user.uid)
-					.set({
-						username: socialAuthUser.user.email,
-						email: socialAuthUser.user.email,
-						roles: {},
-					});
-				})
-			.then(() => {
-			this.setState({ error: null });
-			this.props.history.push(ROUTES.HOME);
-			})
-			.catch(error => {
-				this.setState({ error });
-			});
-			
-		event.preventDefault();
-	};
-
-	render() {
-		const { error } = this.state;
-
-		return (
-			<form onSubmit={this.onSubmit}>
-				<Button type="submit">Sign In with Google</Button>
-
-				{error && <p>{error.message}</p>}
-			</form>
-		);
-	}
-}
-
-const useStyles = makeStyles(theme => ({
-  root: {
-    height: '100vh',
-  },
-  image: {
-    backgroundImage: 'url(https://source.unsplash.com/random)',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: 'cover',
-	backgroundPosition: 'center',
-	minHeight: 1,
-	minWidth: 1,
-  },
-  paper: {
-    margin: theme.spacing(8, 4),
-    display: 'flex',
-    flexDirection: 'column',
-	alignItems: 'center',
-	backgroundColor: 'transparent',
-	boxShadow: 'none',
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%', // Fix IE 11 issue.
-	marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-  button: {
-    margin: theme.spacing(1),
-  },
-  input: {
-    display: 'none',
-  },
-}));
+const ERROR_MSG_ACCOUNT_EXISTS = `
+	An account with an E-mail adress to
+	this social account already exists. Try to login from
+	this account instead and associate your social accounts on
+	your personal account page.
+`;
 
 const SignInPage = () => {
+	const useStyles = makeStyles(theme => ({
+		root: {
+		  height: '100vh',
+		},
+		image: {
+		  backgroundImage: 'url(https://source.unsplash.com/random)',
+		  backgroundRepeat: 'no-repeat',
+		  backgroundSize: 'cover',
+		  backgroundPosition: 'center',
+		  minHeight: 1,
+		  minWidth: 1,
+		},
+		paper: {
+		  margin: theme.spacing(8, 4),
+		  display: 'flex',
+		  flexDirection: 'column',
+		  alignItems: 'center',
+		  backgroundColor: 'transparent',
+		  boxShadow: 'none',
+		},
+		avatar: {
+		  margin: theme.spacing(1),
+		  backgroundColor: theme.palette.secondary.main,
+		},
+		form: {
+		  width: '100%', // Fix IE 11 issue.
+		  marginTop: theme.spacing(1),
+		},
+		submit: {
+		  margin: theme.spacing(3, 0, 2),
+		},
+		button: {
+		  margin: theme.spacing(1),
+		},
+		input: {
+		  display: 'none',
+		},
+	  }));
+
 	const classes = useStyles();
 	return (
 		<div>
@@ -249,9 +175,14 @@ class SignInFormBase extends Component {
             </Grid>
 			{error && <p>{error.message}</p>}
           </form>
-		<Grid item xs={3}>
-			<SignInWithGoogle />
-			<SignInWithFacebook />
+		<Grid item xs={2}>
+			<Grid >
+				<SignInWithGoogle />
+			</Grid>
+			<Grid>
+				<SignInWithFacebook />
+			</Grid>
+			{/* <SignInWithTwitter /> */}
 		</Grid>
         </div>
       </Grid>
@@ -260,6 +191,148 @@ class SignInFormBase extends Component {
   );
 }
 }
+
+class SignInWithTwitterBase extends Component {
+	constructor(props){
+		super(props);
+
+		this.state = { error: null };
+	}
+
+	onSubmit = event => {
+		this.props.firebase
+			.doSignInWithTwitter()
+			.then(socialAuthUser => {
+				return this.props.firebase
+					.user(socialAuthUser.user.uid)
+					.set({
+						username: socialAuthUser.additionalUserInfo.profile.email,
+						email: socialAuthUser.additionalUserInfo.profile.email,
+						roles: {},
+					});
+				})
+			.then(() => {
+				this.setState({ error: null });
+				this.props.history.push(ROUTES.HOME);
+			})
+			.catch(error => {
+				if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+					error.message = ERROR_MSG_ACCOUNT_EXISTS;
+				}
+
+				this.setState({ error });
+			});
+
+			event.preventDefault();
+	};
+
+	render() {
+		const { error } = this.state;
+
+		return (
+			<form onSubmit={this.onSubmit}>
+				<Button type="submit">Sign In with Twitter</Button>
+
+				{error && <p>{error.message}</p>}
+			</form>
+		);
+	}
+}
+
+class SignInWithFacebookBase extends Component {
+	constructor(props){
+		super(props);
+
+		this.state = { error: null };
+	}
+
+	onSubmit = event => {
+		this.props.firebase
+			.doSignInWithFacebook()
+			.then(socialAuthUser => {
+				return this.props.firebase
+					.user(socialAuthUser.user.uid)
+					.set({
+						username: socialAuthUser.additionalUserInfo.profile.email,
+						email: socialAuthUser.additionalUserInfo.profile.email,
+						roles: {},
+					});
+				})
+			.then(() => {
+				this.setState({ error: null });
+				this.props.history.push(ROUTES.HOME);
+			})
+			.catch(error => {
+				if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+					error.message = ERROR_MSG_ACCOUNT_EXISTS;
+				}
+
+				this.setState({ error });
+			});
+
+			event.preventDefault();
+	};
+
+	render() {
+		const { error } = this.state;
+
+		return (
+			<form onSubmit={this.onSubmit}>
+				<Button type="submit">Sign In with Facebook</Button>
+
+				{error && <p>{error.message}</p>}
+			</form>
+		);
+	}
+}
+
+class SignInWithGoogleBase extends Component {
+	constructor(props) {
+		super(props)
+		
+		this.state = { error: null };
+	}
+
+	onSubmit = event => {
+		this.props.firebase
+			.doSignInWithGoogle()
+			.then(socialAuthUser => {
+				return this.props.firebase
+					.user(socialAuthUser.user.uid)
+					.set({
+						username: socialAuthUser.user.email,
+						email: socialAuthUser.user.email,
+						roles: {},
+					});
+				})
+			.then(() => {
+			this.setState({ error: null });
+			this.props.history.push(ROUTES.HOME);
+			})
+			.catch(error => {
+				if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+					error.message = ERROR_MSG_ACCOUNT_EXISTS;
+				}
+
+				this.setState({ error });
+			});
+			
+		event.preventDefault();
+	};
+
+	render() {
+		const { error } = this.state;
+
+		return (
+			<form onSubmit={this.onSubmit}>
+				<Button type="submit">Sign In with Google</Button>
+
+				{error && <p>{error.message}</p>}
+			</form>
+		);
+	}
+}
+
 
 const SignInForm = compose(
 	withRouter,
@@ -276,6 +349,11 @@ const SignInWithFacebook = compose(
 	withFirebase,
 )(SignInWithFacebookBase);
 
+const SignInWithTwitter = compose(
+	withRouter,
+	withFirebase,
+)(SignInWithTwitterBase);
+
 export default SignInPage;
 
-export { SignInForm, SignInWithGoogle, SignInWithFacebook };
+export { SignInForm, SignInWithGoogle, SignInWithFacebook, SignInWithTwitter };

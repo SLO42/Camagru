@@ -8,9 +8,20 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ImageCard from './imageCard.js';
 import Grid from '@material-ui/core/Grid';
 import Container from '@material-ui/core/Container';
+import { compose } from 'recompose';
+//import DraggableItem from './draggable';
+import Draggable from 'react-draggable';
+import ButtonBase from '@material-ui/core/ButtonBase';
+import mergeImages from 'merge-images';
 
-import { withAuthorization } from '../Session';
+import doggo from './stickers/doggo64.png';
+import cataxe from './stickers/cataxe64.png';
+import './draggable.css'
+
+import { withFirebase } from '../Firebase';
+import { withAuthorization, AuthUserContext } from '../Session';
 import "react-image-gallery/styles/css/image-gallery.css";
+
 
 class MyCamera extends React.Component{
 	constructor (props)
@@ -27,14 +38,28 @@ class MyCamera extends React.Component{
 			slideOnThumbnailOver: false,
 			showPlayButton: false,
 			thumbnailPosition: 'bottom',
+			images: [],
+
 			selected: -1,
 			total: -1,
 			selectedTime: null,
 			currentPic: null,
+
 			photos: [],
 			saved: [],
-			images: [],
-			handleLike: async (src, toc, selected) => {
+			loading: false,
+
+			selectedSticker: null,
+			sticker: 0,
+			stickerPos: {
+				x: 0,
+				y: 0,
+			},
+
+			replaced: null,
+
+			handleLike: async ( src, toc, selected, authUser ) => {
+				const iId = toc.replace(/\//g, '-').replace(/PM|AM/g, '') + authUser.uid.slice(0-7);
 				if (this.state.images[selected].liked === false)
 				{
 					const imgobj = {
@@ -43,12 +68,27 @@ class MyCamera extends React.Component{
 						selected,
 						liked: true
 					}
+					const newimg = {
+						iid: iId,
+						title: window.prompt("Enter a title for your new image", iId),
+						src,
+						toc,
+						likes: 1,
+						comments: [{
+							text: window.prompt("Enter a Description", "Whaterver you want <3"),
+							userId: authUser.uid,
+							time: new Date().toLocaleString() 
+						},],
+					}
 					await this.state.saved.push(imgobj)
 					this.state.images[selected].liked = true;
+					this.props.firebase
+						.doAddLiked(newimg);
 					await this.setState(this.state)
 					return (imgobj);
 				}
 				else {
+					this.props.firebase.doRemoveLiked(iId);
 					for (let i in this.state.saved) {
 						if (this.state.selected === this.state.saved[i].selected) {
 							await delete this.state.saved[i];
@@ -67,6 +107,15 @@ class MyCamera extends React.Component{
 			}
 		}
 	}
+
+	componentDidMount() {
+		this.setState({ loading: true });
+		}
+
+	componentWillUnmount() {
+		this.props.firebase.gallery().off();
+	}
+
 
 	async onSlideEvent(event) {
 		await this.setState({
@@ -95,11 +144,46 @@ class MyCamera extends React.Component{
 		this._imageGallery = imageGallery;
 	}
 
+	updatesticker = stick => {
+		this.setState({ 
+			sticker: 2,
+			selectedSticker: stick,
+		
+		});
+	}
+
 	capture = async () => {
-		let picture = await this.webcam.getScreenshot();
+		let picture = this.state.replaced ? this.state.replaced : await this.webcam.getScreenshot();
 		if (picture === null) {
 			return;
 		}
+		// if (this.)
+		// this.state.replaced ? picture.resize(320,220) : ;
+
+		const getCurrentState = () => {
+			if (document.getElementById("imagine")){
+				const info = document.getElementById("imagine").getAttribute("style");
+				let values = (info.slice(info.indexOf("(") + 1, info.indexOf(")")));
+				return this.CSV_to_JSON('x,y|'+ values);
+			}
+		}
+
+		const merger = async ( picture, stickerObj ) => {
+			if (picture && stickerObj){
+					const x = parseInt(stickerObj[0].x);
+					const y = parseInt(stickerObj[0].y);
+
+					await mergeImages([
+						{ src: picture, x: 0, y: 0},
+						{ src: this.state.selectedSticker, x, y }
+					]).then(b64 => this.setState({ currentPic: b64 }));
+				}
+
+			}
+
+		await merger(picture, getCurrentState());
+		picture = this.state.currentPic;
+
 		const now = new Date().toLocaleString();
 		let newpic = {
 			orignal: picture,
@@ -116,26 +200,83 @@ class MyCamera extends React.Component{
 		await this.setState(this.state);
 	  };
 
+	CSV_to_JSON = (data, delimiter = ',') => {
+		const titles = data.slice(0, data.indexOf('|')).split(delimiter);
+		return data
+			.slice(data.indexOf('|') + 1)
+			.split('|')
+			.map(v => {
+			const values = v.split(delimiter);
+			return titles.reduce((obj, title, index) => ((obj[title] = values[index]), obj), {});
+		});
+	};
+
+	isAble = () => {
+		if (this.state.sticker){
+			if (document.getElementById("imagine")){
+				if (this.state.sticker === 1) {
+					this.setState({ sticker: 2 });
+				}
+				return (1);
+			} else return (0);
+		} else return (0);
+	}
+
 	  render() {
-		  const videoConstraints = {
-			  width: 1080,
-			  heigh: 720,
+		const videoConstraints = {
+			  width: 720,
+			  heigh: 640,
 			  facingMode: "user"
 		  };
+		const {sticker, images, infinite, showBullets,
+			showNav, showIndex, slideOnThumbnailOver, thumbnailPosition,
+			showPlayButton, showGalleryFullscreenButton, showFullscreenButton,
+			selectedSticker, replaced
+		} = this.state;
+
+		const fileChangedHandler = async event => {
+			if (event.target.files != null){
+				await this.setState({
+					replaced: event.target.files[0]
+				})
+				if (this.state.replaced) {
+					await this.setState({ replaced: URL.createObjectURL(this.state.replaced)})
+				}
+			} else {
+				this.setState({ replaced: null })
+			}
+			console.log(this.state.replaced);
+		  }
+  
+
 		  return (
+			  <AuthUserContext.Consumer>
+				  {authUser => (
 				<div className="MyCameraStart" style={{position: 'relative'}}>
-					<div className="Smile">
+					<div className="Smile" style={{width: 320, height: 220, display: 'flex', justifyContent: 'inherit'}}>
+					{!replaced ? (
 						<Webcam
 						audio={false}
-						height={720}
+						height={220}
 						ref={this.setRef}
 						screenshotFormat="image/jpeg"
-						width={1080}
+						width={320}
 						videoConstraints={videoConstraints}
 						/>
+						) : (<img src={replaced} alt={replaced} style={{width: 320, height: 220, display: 'flex', justifyContent: 'inherit'}} ></img>)}
+						
+						{/* <DraggableItem /> */}
+							{selectedSticker ? (
+								<Draggable bounds='parent' onStop={this.isAble} >
+									<img id="imagine" src={selectedSticker} alt={selectedSticker} style={{position: 'absolute', top: 18}}/>
+								</Draggable>) : null }
+
 					</div>
+					<ButtonBase onClick={() => this.updatesticker(cataxe)}>  <img src={cataxe} alt={cataxe} style={{maxWidth: `100px`}}/> </ButtonBase>
+					<ButtonBase onClick={() => this.updatesticker(doggo)}>  <img src={doggo} alt={doggo} style={{maxWidth: `100px`}}/> </ButtonBase>
+					<input type="file" onChange={fileChangedHandler} />
 					<div style={{margin: 'auto', alignContent: 'center'}}>
-						<button onClick={this.capture}>Capture photo</button>
+						<button disabled={sticker === 1 || sticker === 0} onClick={this.capture}>Capture photo</button>
 					</div>
 					<div className="Gallery" style={{
 						maxWidth: '750px',
@@ -157,33 +298,34 @@ class MyCamera extends React.Component{
 										justify="center"
 										alignItems="center"
 									>
-										<Grid item>
+										<Grid item style={{maxWidth: '658px'}}>
 											<ImageGallery
 												ref={this.setRef2}
 												// onThumbnailClick={this._onThumbnailClick.bind(this)}
-												items={this.state.images} 
-												infinite={this.state.infinite}
-												showBullets={this.state.showBullets}
+												items={images} 
+												infinite={infinite}
+												showBullets={showBullets}
 												// onClick={this._onImageClick.bind(this)}
-												showNav={this.state.showNav}
-												showIndex={this.state.showIndex}
-												slideOnThumbnailOver={this.state.slideOnThumbnailOver}
-												thumbnailPosition={this.state.thumbnailPosition}
-												showPlayButton={this.state.showPlayButton}
-												showGalleryFullscreenButton={this.state.showGalleryFullscreenButton}
-												showFullscreenButton={this.state.showFullscreenButton}
+												showNav={showNav}
+												showIndex={showIndex}
+												slideOnThumbnailOver={slideOnThumbnailOver}
+												thumbnailPosition={thumbnailPosition}
+												showPlayButton={showPlayButton}
+												showGalleryFullscreenButton={showGalleryFullscreenButton}
+												showFullscreenButton={showFullscreenButton}
 												additionalClass="app-image-gallery"
 												onSlide={this.onSlideEvent.bind(this)}
 												disableSwipe={true}
 											/>
 										</Grid>
-										<Grid item>
+										<Grid item >
 											<ImageCard 
 												src={!this.state.currentPic ? null : this.state.currentPic}
 												timeStamp={this.state.selectedTime}
 												selected={this.state.selected}
 												liked={this.state.selected === -1 ? null : this.state.images[this.state.selected].liked }
 												handleLike={this.state.handleLike}
+												authUser={authUser}
 											/>
 										</Grid>
 									</Grid>
@@ -192,10 +334,17 @@ class MyCamera extends React.Component{
 						</ExpansionPanel>
 					</div>
 				</div>
+				)}
+				</AuthUserContext.Consumer>
 		  	);
 	 	 }
 }
 
 const condition = authUser => !!authUser;
 
-export default withAuthorization(condition)(MyCamera);
+
+
+export default compose(
+	withFirebase,
+	withAuthorization(condition),
+)(MyCamera);

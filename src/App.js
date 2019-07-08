@@ -3,17 +3,18 @@ import './App.css';
 import { BrowserRouter as Router,
 		Route,
 } from 'react-router-dom';
-import MyMenu from '../AppBar';
-import LandingPage from '../Landing';
-import SignUpPage from '../SignUp';
-import SignInPage from '../SignIn';
-import PasswordForgetPage from '../PasswordForget';
-import HomePage from '../Home';
-import AccountPage from '../Account';
-import AdminPage from '../Admin';
-import CameraPage from '../Camera';
-import { withAuthentication } from '../Session';
-import * as ROUTES from '../../constants/routes.js';
+import MyMenu from './components/AppBar';
+import LandingPage from './components/Landing';
+import SignUpPage from './components/SignUp';
+import SignInPage from './components/SignIn';
+import PasswordForgetPage from './components/PasswordForget';
+import HomePage from './components/Home';
+import AccountPage from './components/Account';
+import AdminPage from './components/Admin';
+import CameraPage from './components/Camera';
+import GalleryPage from './components/Gallery';
+import { withAuthentication } from './components/Session';
+import * as ROUTES from './constants/routes.js';
 
 const App = () => (
 	<Router>
@@ -30,6 +31,7 @@ const App = () => (
 			<Route path={ROUTES.ACCOUNT} component={AccountPage} />
 			<Route path={ROUTES.ADMIN} component={AdminPage} />
 			<Route path={ROUTES.CAMERA} component={CameraPage} />
+			<Route path={ROUTES.GALLERY} component={GalleryPage} />
 		</div>
 	</Router>
 );

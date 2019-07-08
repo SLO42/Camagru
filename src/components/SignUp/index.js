@@ -6,7 +6,7 @@ import TextField from '@material-ui/core/TextField';
 import Grid from '@material-ui/core/Grid';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles, withStyles } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import { Link, withRouter } from 'react-router-dom';
@@ -15,31 +15,6 @@ import { compose } from 'recompose';
 import * as ROLES from '../../constants/roles';
 import { withFirebase } from '../Firebase';
 import * as ROUTES from '../../constants/routes';
-
-const useStyles = makeStyles(theme => ({
-  '@global': {
-    body: {
-      backgroundColor: theme.palette.common.white,
-    },
-  },
-  paper: {
-    marginTop: theme.spacing(8),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(3),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-}));
 
 const INITIAL_STATE = {
 	email: '',
@@ -50,6 +25,30 @@ const INITIAL_STATE = {
 };
 
 const SignUpPage = () => {
+	const useStyles = makeStyles(theme => ({
+		'@global': {
+		  body: {
+			backgroundColor: theme.palette.common.white,
+		  },
+		},
+		paper: {
+		  marginTop: theme.spacing(8),
+		  display: 'flex',
+		  flexDirection: 'column',
+		  alignItems: 'center',
+		},
+		avatar: {
+		  margin: theme.spacing(1),
+		  backgroundColor: theme.palette.secondary.main,
+		},
+		form: {
+		  width: '100%', // Fix IE 11 issue.
+		  marginTop: theme.spacing(3),
+		},
+		submit: {
+		  margin: theme.spacing(3, 0, 2),
+		},
+	  }));
 	const classes = useStyles();
 	return (
 	<div>
@@ -57,6 +56,18 @@ const SignUpPage = () => {
 	</div>
 	)
 }
+
+const ERROR_CODE_ACCOUNT_EXISTS = 'auth/email-already-in-use';
+
+const ERROR_NO_REDIRECT = 'auth/missing-continue-uri';
+
+const ERROR_MSG_ACCOUNT_EXISTS = `
+	An account with this E-Mail address already exists.
+	Try to login with this account instead. If you think the
+	account is already used from one of the social logins, try
+	to sign-in with one of them. Afterward, associate your accounts
+	on your personal account page.
+`;
 
 
 class SignUpFormBase extends Component {
@@ -68,7 +79,6 @@ class SignUpFormBase extends Component {
 	
 	onSubmit = event => {
 		const { email, passwordOne, isAdmin } = this.state;
-
 		const roles = {};
 
 		if (isAdmin) {
@@ -86,11 +96,20 @@ class SignUpFormBase extends Component {
 						roles,
 					});
 			})
-			.then(authUser => {
+			.then(() => {
+				return this.props.firebase.doSendEmailVerification();
+			})
+			.then(() => {
 				this.setState({ ...INITIAL_STATE });
 				this.props.history.push(ROUTES.HOME);
 			})
 			.catch(error => {
+				if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
+					error.message = ERROR_MSG_ACCOUNT_EXISTS;
+				}
+				if (error.code === ERROR_NO_REDIRECT) {
+					return this.props.history.push(ROUTES.HOME);
+				}
 				this.setState({ error });
 			});
 

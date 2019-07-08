@@ -40,7 +40,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const ImgCard = ({src, timeStamp, selected, liked, handleLike }) =>  {
+const ImgCard = ({src, timeStamp, selected, liked, handleLike, authUser }) =>  {
 	const [expanded, setExpanded] = React.useState(false);
 	const imgToHandle = src;
 	const newtime = timeStamp;
@@ -79,7 +79,7 @@ const ImgCard = ({src, timeStamp, selected, liked, handleLike }) =>  {
       <CardActions disableSpacing>
 		<IconButton aria-label="Add to favorites" 
 			onClick={() => {
-				handleLike(imgToHandle, newtime, selected)}}
+				handleLike(imgToHandle, newtime, selected, authUser)}}
 			color={liked ? 'primary' : 'default' }
 		>
           <FavoriteIcon />

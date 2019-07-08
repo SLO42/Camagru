@@ -1,6 +1,10 @@
 import app from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
+import 'firebase/functions';
+import axios from 'axios';
+
+const URL = 'http://localhost:3001/api/sendMail';
 
 const config = {
 	apiKey: process.env.REACT_APP_API_KEY,
@@ -12,15 +16,20 @@ const config = {
 	appId: process.env.REACT_APP_APP_ID
 };
 
+
 class Firebase {
 	constructor() {
 		app.initializeApp(config);
 
+		this.emailAuthProvider = app.auth.EmailAuthProvider;
 		this.auth = app.auth();
 		this.db = app.database();
+		this.func = app.functions();
 
+		this.sendEmail = this.func.httpsCallable('sendEmail');
 		this.googleProvider = new app.auth.GoogleAuthProvider();
 		this.facebookProvider = new app.auth.FacebookAuthProvider();
+		this.twitterProvider = new app.auth.TwitterAuthProvider();
 	}
 
 	doCreateUserWithEmailAndPassword = (email, password) =>
@@ -34,6 +43,9 @@ class Firebase {
 
 	doSignInWithFacebook = () => 
 		this.auth.signInWithPopup(this.facebookProvider);
+	
+	doSignInWithTwitter = () =>
+		this.auth.signInWithPopup(this.twitterProvider);
 
 	doSignOut = () => this.auth.signOut();
 
@@ -42,6 +54,21 @@ class Firebase {
 	
 	doPasswordUpdate = password =>
 		this.auth.currentUser.updatePassword(password);
+
+	doSendEmailVerification = () => 
+		this.auth.currentUser.sendEmailVerification({
+			url: process.env.REACT_APP_CONFIRMATION_EMAIL_REDIRECT,
+		});
+
+	doSendEmailNotify = async email => {
+		await axios.post(URL, { email })
+			.then(response => console.log(response))
+			.catch(error => console.log(error));
+		//messageServer();
+		// this.sendEmail({ email }).then(result => {
+		// 	console.log(result);
+		// })
+	}
 
 	onAuthUserListener = (next, fallback) =>
 		this.auth.onAuthStateChanged(authUser => {
@@ -58,6 +85,8 @@ class Firebase {
 						authUser = {
 							uid: authUser.uid,
 							email: authUser.email,
+							emailVerified: authUser.emailVerified,
+							providerData: authUser.providerData,
 							...dbUser,
 						};
 
@@ -68,9 +97,65 @@ class Firebase {
 			}
 		});
 
+
+	
+
+	doAddLiked = (imgObject) => {
+		this.gallery().child(imgObject.iid).set(imgObject);
+	}
+
+	doOnLike = (imgObject) => {
+		const like = imgObject.likes + 1;
+		this.gallery().child(imgObject.iid).child("likes").set(like);
+	}
+
+	doOnDislike = (imgObject) => {
+		const like = imgObject.likes - 1;
+		this.gallery().child(imgObject.iid).child("likes").set(like);
+	}
+
+	doRemoveLiked = (imageId) => {
+		if (window.confirm("Are you sure you want to delete the image?"))
+			this.gallery().child(imageId).set(null);
+		else ;
+	}
+
+	
+
+	updateDesc = ( iid, txt ) => this.comment(iid, 0).child("text").set(txt);
+
+	updateTitle = ( iid, txt ) => this.image(iid).child("title").set(txt);
+
+	doWriteComment = (iid, txt, uid) => {
+		const comRef = this.comments(iid);
+		let i = 0;
+		
+		comRef.on("value", snapshot => { i = snapshot.numChildren()});
+
+		comRef.child(`${i}`).set({
+			text: txt,
+			time: new Date().toLocaleDateString(),
+			userId: uid,
+		})
+	}
+
 	user = uid => this.db.ref(`users/${uid}`);
 
 	users = () => this.db.ref('users');
+	
+	// message = uid => this.db.ref(`messages/${uid}`);
+
+	// messages = () => this.db.ref('messages');
+
+	// stickers = () => this.db.ref(`stickers`);
+	
+	gallery = () => this.db.ref(`gallery`);
+
+	image = iid => this.db.ref(`gallery/${iid}`);
+
+	comments = iid => this.db.ref(`gallery/${iid}/comments`);
+
+	comment = (iid, n) => this.db.ref(`gallery/${iid}/comments/${n}`);
 
 }
 

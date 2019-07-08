@@ -24,15 +24,6 @@ import { AuthUserContext } from '../Session';
 	  
 const MyMenuButtonAuth = ({ authUser }) => {
 	  
-		let selectedFile = null;
-
-		const fileChangedHandler = event => {
-		  selectedFile = event.target.files[0];
-		}
-
-		const uploadHandler = async () => {
-  		await console.log(selectedFile)
-			}
 		return (
 
 		<PopupState variant="popover" popupId="demo-popup-menu">
@@ -44,6 +35,9 @@ const MyMenuButtonAuth = ({ authUser }) => {
           			<Menu {...bindMenu(popupState)}>
 					  	<MenuItem onClick={function(event) {popupState.close();}} component={Link} to={ROUTES.CAMERA}>
 					  		Camera
+						</MenuItem>
+						<MenuItem onClick={function(event) {popupState.close();}} component={Link} to={ROUTES.GALLERY}>
+					  		Gallery
 						</MenuItem>
 						<MenuItem onClick={function(event) {popupState.close();}} component={Link} to={ROUTES.LANDING}>
 							Landing
@@ -64,8 +58,8 @@ const MyMenuButtonAuth = ({ authUser }) => {
 							<SignOutButton />
 						</MenuItem>
 						<MenuItem>Sticker Collection 
-						<input type="file" onChange={fileChangedHandler} />
-				  		<button onClick={uploadHandler}>Upload!</button>
+						{/* <input type="file" onChange={fileChangedHandler} />
+				  		<button onClick={uploadHandler}>Upload!</button> */}
 				  </MenuItem>
           			</Menu>
        		</React.Fragment>
