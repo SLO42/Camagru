@@ -8,3 +8,4 @@ export const PASSWORD_FORGET = '/pw-forget';
 export const CAMERA = '/camera';
 export const ADMIN_DETAILS = '/admin/:id';
 export const MYIMAGE = '/home/:id';
+export const GALLERY = '/gallery';

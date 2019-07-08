@@ -90,13 +90,13 @@ const ImageCard = ({ imageObject, authUser }) => {
 	return (
 		<Card className={classes.card} style={{height: '490px'}}>
       <CardHeader
-        action={
+    	action={ authUser.uid === imageObject.comments[0].userId ?
 			<IconButton aria-label="Settings" component={Link} to={{
 				pathname: `${ROUTES.HOME}/${imageObject.uid}`,
 				state: { imageObject, authUser },
-			}}>
+			}} >
             <SettingsIcon />
-          </IconButton>
+          </IconButton> : null
 		}
 		style={{whiteSpace: 'nowrap', fontSize: '1em'}}
         title={otit ? otit.length > 28 ? otit.substr(0, 28) + "..." : otit : null}
@@ -151,19 +151,33 @@ const HomeHome = () => (
 			</AuthUserContext.Consumer> 
 )
 
-const CommentList = ({ messages }) => (
-	<ul>
-		{messages.map(message => (
-			<CommentItem key={message} message={message} />
+const CommentList = ({ messages, firebase }) => (
+	<ul key={"start"}>
+		{messages.map((message, index) => (
+			<CommentItem key={index} index={index} message={message} firebase={firebase}/>
 		))}
 	</ul>
 )
 
-const CommentItem = ({ message }) => (
-	<li>
+const CommentItem = ({ index, message, firebase }) => {
+
+	// const [values, setValues] = React.useState({
+	// 	userObject: null,
+	// 	user: "",
+	// })
+	// firebase.user(message.userId).on('value', snapshot => {
+	// 	const userObject = snapshot.val();
+	// 	console.log(userObject.email);
+	// 	setValues({ ...values, userObject: userObject});
+	// 	setValues({ ...values, user: userObject.email });
+	// })
+	// console.log
+	// firebase.user(message.userId).off();
+	return (
+	<li key={index}>
 		<strong>{message.userId}</strong> {message.text}
 	</li>
-)
+)}
 
 class CommentBase extends Component{
 	constructor(props){
@@ -182,6 +196,14 @@ class CommentBase extends Component{
 
 	onCreateComment = () => {
 		this.props.firebase.doWriteComment(this.props.imageObject.iid, this.state.text, this.props.authUser.uid);
+		this.props.firebase.user(this.props.imageObject.comments[0].userId)
+		.on('value', snapshot => {
+			const userinfo = snapshot.val();
+			console.log(userinfo.email);
+			this.props.firebase.doSendEmailNotify(userinfo.email);
+
+		});
+
 		this.setState({ text: "" });
 	}
 
@@ -193,7 +215,6 @@ class CommentBase extends Component{
 				const commentObject = snapshot.val();
 
 				if (commentObject) {
-					console.log(commentObject.length)
 
 					this.setState({ 
 						messages: commentObject,
@@ -219,7 +240,7 @@ class CommentBase extends Component{
 
 					{messages ? (
 						<Card>
-							<CommentList messages={messages} />
+							<CommentList messages={messages} firebase={this.props.firebase} />
 						</Card>
 						) : (
 							<div> There are no messages ... </div>
@@ -238,20 +259,41 @@ class CommentBase extends Component{
 
 }
 
-const MainCard = ({ authUser, imageObject, doUpdateDesc, doUpdateUid, doUpdateLike }) => {
+const MainCard = ({ authUser, imageObject, doUpdateDesc, doUpdateUid, doUpdateLike, doMove }) => {
 	const classes = useStyles();
+
+	if (!imageObject){
+		doMove();
+	}
 
 	const [values, setValues] = React.useState({
 		name: '',
-		title: '',
-		multiline: '',
+		title: imageObject ? imageObject.title : '',
+		multiline: imageObject ? imageObject.comments[0].text : '',
+		likes: imageObject ? imageObject.likes : 0,
+		liked: 0,
 	});
+
 	
 		
 	const handleChange = name => event => {
 		setValues({ ...values, [name]: event.target.value });
 	  };
 
+	const handleLike = () => {
+		if (values.liked === 0){
+			setValues({ ...values, liked: ++values.liked});
+			console.log(values.liked)
+			setValues({ ...values, likes: ++values.likes});
+			doUpdateLike(imageObject, values.liked);
+		} else {
+			setValues({ ...values, liked: --values.liked});
+			setValues({ ...values, likes: --values.likes});
+			doUpdateLike(imageObject, values.liked);
+		}
+	}
+
+	
 	const iconAction = () => (
 		<IconButton aria-label="Settings" onClick={ async () => {
 			if (window.confirm("would you like to save something?")){
@@ -281,24 +323,26 @@ const MainCard = ({ authUser, imageObject, doUpdateDesc, doUpdateUid, doUpdateLi
 
 	return(
 		<div>
-			<Grid container>
+			{authUser ? (
+				<Grid container>
 				<Card className={classes.pageMain} style={{minWidth: '100%'}}>
-					<CardHeader action={iconAction()} title={
-						<TextField id="Title" label="Title {Limit : 28 Characters}" fullWidth onChange={handleChange('title')} value={values.title} />
+					<CardHeader action={ authUser ? authUser.uid === imageObject.comments[0].userId ? iconAction() : null : null }
+					title={
+						<TextField disabled={authUser.uid !== imageObject.comments[0].userId} id="Title" label="Title {Limit : 28 Characters}" fullWidth onChange={handleChange('title')} value={values.title} />
 					}/>
 					<CardMedia className={classes.pageMedia} image={imageObject ? imageObject.src : null} title={imageObject ? imageObject.uid : null} />
 					<IconButton aria-label="Add to favorites" 
-						onClick={() => {doUpdateLike(imageObject);}}
+						onClick={() => { handleLike(); }}
 								color={ 'primary' }
 								>
-							<Badge badgeContent={imageObject.likes} >
 						<FavoriteIcon /> 
-								</Badge>
+						{imageObject.likes}
 					</IconButton>
 
 					<CardContent>
 						{/* <Typography variant="body2" component="p"> */}
 						<TextField
+							disabled={authUser.uid !== imageObject.comments[0].userId}
 							id="Description Box" label="Description" multiline fullWidth rowsMax="4"
 							value={values.multiline} onChange={handleChange('multiline')}
 							className={classes.textField} margin="normal"
@@ -311,12 +355,12 @@ const MainCard = ({ authUser, imageObject, doUpdateDesc, doUpdateUid, doUpdateLi
 								<Comments  imageObject={imageObject} authUser={authUser}/>
 							</Card>
 						</Grid>
-							{`${imageObject.comments[0].text}`}
+							{/* {`${imageObject.comments[0].text}`} */}
 						
 					</CardContent>
 				{/* This is where i would map the comments by comment order giving timestamp and metadata */}
 				</Card>
-			</Grid>
+			</Grid> ) : ( <div> do it you wont </div>)}
 		</div>
 	);
 	}
@@ -357,6 +401,7 @@ const ImageList = ({ images, authUser, firebase }) => {
 				// </Grid>
 			) : (null)
 				)}
+
 			</GridList>
 		</div>
 	);
@@ -391,16 +436,24 @@ class SinglePageBase extends Component {
 
 				this.setState({ imageObject });
 			},
-			writeComment: txt => { 
+			writeComment: txt => {
 				this.props.firebase.doWriteComment(this.state.imageObject.iid, txt, this.state.authUser.uid);
 			},
-			doUpdateLike: imageObject => {
-				this.props.firebase.doOnLike(imageObject)
-				imageObject.likes = imageObject.likes + 1;
+			doUpdateLike: (imageObject, event) => {
+				if (event === 1){
+					this.props.firebase.doOnLike(imageObject)
+					imageObject.likes = imageObject.likes + 1;
+				} else {
+					this.props.firebase.doOnDislike(imageObject)
+					imageObject.likes = imageObject.likes - 1;
+				}
 					return (
 						<MainCard />
 					)
 				
+			},
+			doMove: () => {
+				this.props.history.push(ROUTES.HOME);
 			},
 			...props.location.state,
 		};
@@ -433,7 +486,7 @@ class SinglePageBase extends Component {
 
 	render() {
 
-		const { imageObject, doUpdateDesc, doUpdateUid, doUpdateLike } = this.state;
+		const { imageObject, doUpdateDesc, doUpdateUid, doUpdateLike, doMove } = this.state;
 
 		return (
 			<div>
@@ -443,6 +496,7 @@ class SinglePageBase extends Component {
 					doUpdateDesc={doUpdateDesc} 
 					doUpdateUid={doUpdateUid}
 					doUpdateLike={doUpdateLike}
+					doMove={doMove}
 					/>}
 			</div>
 		)}
@@ -561,7 +615,10 @@ const Images = withFirebase(ImagesBase);
 const condition = authUser => !!authUser;
 
 const SinglePage = withFirebase(SinglePageBase);
+
 export default compose(
 	withEmailVerification,
 	withAuthorization(condition),
 )(HomePage);
+
+export { ImageCard, ImageList };

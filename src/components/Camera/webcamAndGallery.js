@@ -56,6 +56,8 @@ class MyCamera extends React.Component{
 				y: 0,
 			},
 
+			replaced: null,
+
 			handleLike: async ( src, toc, selected, authUser ) => {
 				const iId = toc.replace(/\//g, '-').replace(/PM|AM/g, '') + authUser.uid.slice(0-7);
 				if (this.state.images[selected].liked === false)
@@ -144,17 +146,19 @@ class MyCamera extends React.Component{
 
 	updatesticker = stick => {
 		this.setState({ 
-			sticker: 1,
+			sticker: 2,
 			selectedSticker: stick,
 		
 		});
 	}
 
 	capture = async () => {
-		let picture = await this.webcam.getScreenshot();
+		let picture = this.state.replaced ? this.state.replaced : await this.webcam.getScreenshot();
 		if (picture === null) {
 			return;
 		}
+		// if (this.)
+		// this.state.replaced ? picture.resize(320,220) : ;
 
 		const getCurrentState = () => {
 			if (document.getElementById("imagine")){
@@ -227,14 +231,30 @@ class MyCamera extends React.Component{
 		const {sticker, images, infinite, showBullets,
 			showNav, showIndex, slideOnThumbnailOver, thumbnailPosition,
 			showPlayButton, showGalleryFullscreenButton, showFullscreenButton,
-			selectedSticker
+			selectedSticker, replaced
 		} = this.state;
+
+		const fileChangedHandler = async event => {
+			if (event.target.files != null){
+				await this.setState({
+					replaced: event.target.files[0]
+				})
+				if (this.state.replaced) {
+					await this.setState({ replaced: URL.createObjectURL(this.state.replaced)})
+				}
+			} else {
+				this.setState({ replaced: null })
+			}
+			console.log(this.state.replaced);
+		  }
+  
 
 		  return (
 			  <AuthUserContext.Consumer>
 				  {authUser => (
 				<div className="MyCameraStart" style={{position: 'relative'}}>
 					<div className="Smile" style={{width: 320, height: 220, display: 'flex', justifyContent: 'inherit'}}>
+					{!replaced ? (
 						<Webcam
 						audio={false}
 						height={220}
@@ -243,15 +263,18 @@ class MyCamera extends React.Component{
 						width={320}
 						videoConstraints={videoConstraints}
 						/>
-						{selectedSticker ? (
-							<Draggable bounds='parent' onStop={this.isAble} >
-								<img id="imagine" src={selectedSticker} alt={selectedSticker} style={{position: 'absolute', top: 18}}/>
-							</Draggable>) : null }
+						) : (<img src={replaced} alt={replaced} style={{width: 320, height: 220, display: 'flex', justifyContent: 'inherit'}} ></img>)}
+						
+						{/* <DraggableItem /> */}
+							{selectedSticker ? (
+								<Draggable bounds='parent' onStop={this.isAble} >
+									<img id="imagine" src={selectedSticker} alt={selectedSticker} style={{position: 'absolute', top: 18}}/>
+								</Draggable>) : null }
 
-					{/* <DraggableItem /> */}
 					</div>
-					<ButtonBase onClick={() => this.updatesticker(cataxe)}> yes <img src={cataxe} alt={cataxe} style={{maxWidth: `100px`}}/> </ButtonBase>
-					<ButtonBase onClick={() => this.updatesticker(doggo)}> yes <img src={doggo} alt={doggo} style={{maxWidth: `100px`}}/> </ButtonBase>
+					<ButtonBase onClick={() => this.updatesticker(cataxe)}>  <img src={cataxe} alt={cataxe} style={{maxWidth: `100px`}}/> </ButtonBase>
+					<ButtonBase onClick={() => this.updatesticker(doggo)}>  <img src={doggo} alt={doggo} style={{maxWidth: `100px`}}/> </ButtonBase>
+					<input type="file" onChange={fileChangedHandler} />
 					<div style={{margin: 'auto', alignContent: 'center'}}>
 						<button disabled={sticker === 1 || sticker === 0} onClick={this.capture}>Capture photo</button>
 					</div>

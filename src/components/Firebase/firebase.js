@@ -1,7 +1,10 @@
 import app from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
+import 'firebase/functions';
+import axios from 'axios';
 
+const URL = 'http://localhost:3001/api/sendMail';
 
 const config = {
 	apiKey: process.env.REACT_APP_API_KEY,
@@ -13,6 +16,7 @@ const config = {
 	appId: process.env.REACT_APP_APP_ID
 };
 
+
 class Firebase {
 	constructor() {
 		app.initializeApp(config);
@@ -20,7 +24,9 @@ class Firebase {
 		this.emailAuthProvider = app.auth.EmailAuthProvider;
 		this.auth = app.auth();
 		this.db = app.database();
+		this.func = app.functions();
 
+		this.sendEmail = this.func.httpsCallable('sendEmail');
 		this.googleProvider = new app.auth.GoogleAuthProvider();
 		this.facebookProvider = new app.auth.FacebookAuthProvider();
 		this.twitterProvider = new app.auth.TwitterAuthProvider();
@@ -53,6 +59,16 @@ class Firebase {
 		this.auth.currentUser.sendEmailVerification({
 			url: process.env.REACT_APP_CONFIRMATION_EMAIL_REDIRECT,
 		});
+
+	doSendEmailNotify = async email => {
+		await axios.post(URL, { email })
+			.then(response => console.log(response))
+			.catch(error => console.log(error));
+		//messageServer();
+		// this.sendEmail({ email }).then(result => {
+		// 	console.log(result);
+		// })
+	}
 
 	onAuthUserListener = (next, fallback) =>
 		this.auth.onAuthStateChanged(authUser => {
@@ -93,11 +109,18 @@ class Firebase {
 		this.gallery().child(imgObject.iid).child("likes").set(like);
 	}
 
+	doOnDislike = (imgObject) => {
+		const like = imgObject.likes - 1;
+		this.gallery().child(imgObject.iid).child("likes").set(like);
+	}
+
 	doRemoveLiked = (imageId) => {
 		if (window.confirm("Are you sure you want to delete the image?"))
 			this.gallery().child(imageId).set(null);
 		else ;
 	}
+
+	
 
 	updateDesc = ( iid, txt ) => this.comment(iid, 0).child("text").set(txt);
 
