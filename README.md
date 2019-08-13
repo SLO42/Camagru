@@ -1,7 +1,7 @@
 ###### This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 # **Welcome To My Camagru**
-##### This project was assigned via the 42 ciriculum to introduce us to the Javascript web Development and 2 level applications.
+##### This project was assigned via the 42 ciriculum to introduce us to Javascript web Development and 2 level applications.
 
 This application was made with React Frontend with Firebase Serverless Backend.
 <img width="581" alt="Screen Shot 2019-08-13 at 3 14 20 PM" src="https://user-images.githubusercontent.com/16868451/62981066-23f21300-bddd-11e9-814e-9aa0088876d5.png">
