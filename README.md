@@ -1,8 +1,27 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+I've decided to leave most of the Original readme for general use.
+
+# **Welcome To My Camagru**
+<img width="1324" alt="Screen Shot 2019-08-13 at 2 08 15 PM" src="https://user-images.githubusercontent.com/16868451/62977498-dfae4500-bdd3-11e9-9929-4ea053c4be4b.png">
+
+##### This project was assigned via the 42 ciriculum to introduce us to the Javascript web Development and 2 level applications.
+This application was made with React Frontend with Firebase Serverless Backend.
+we use: 
+Frontend:
+- React v^16.8.6
+- React-dom v^16.8.6
+- Material-ui/core v^4.0.0
+- Material-ui/icons v^4.0.0
+
 ## Available Scripts
 
 In the project directory, you can run:
+
+### `npm install`
+
+This will install all packages requried to start and run camagru.
+
 
 ### `npm start`
 
