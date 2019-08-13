@@ -5,9 +5,9 @@
 
 This application was made with React Frontend with Firebase Serverless Backend.
 
-you can find the app hosted on [Heroku](https://blooming-fjord-24130.herokuapp.com/gallery)
+You can find the app hosted on [Heroku](https://blooming-fjord-24130.herokuapp.com/gallery)
 
-we use:
+Packages (incase you were curious):
 
 - Frontend: 
   - [Material-ui/core ^4.0.0](https://material-ui.com/)
