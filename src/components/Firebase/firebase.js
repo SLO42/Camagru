@@ -2,9 +2,6 @@ import app from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
 import 'firebase/functions';
-import axios from 'axios';
-
-const URL = 'http://localhost:3001/api/sendMail';
 
 const config = {
 	apiKey: process.env.REACT_APP_API_KEY,
@@ -59,16 +56,6 @@ class Firebase {
 		this.auth.currentUser.sendEmailVerification({
 			url: process.env.REACT_APP_CONFIRMATION_EMAIL_REDIRECT,
 		});
-
-	doSendEmailNotify = async email => {
-		await axios.post(URL, { email })
-			.then(response => console.log(response))
-			.catch(error => console.log(error));
-		//messageServer();
-		// this.sendEmail({ email }).then(result => {
-		// 	console.log(result);
-		// })
-	}
 
 	onAuthUserListener = (next, fallback) =>
 		this.auth.onAuthStateChanged(authUser => {
