@@ -1,11 +1,11 @@
 ###### This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-# **Welcome To My Camagru**
+# **Welcome To My Camagru** 
 ##### This project was assigned via the 42 ciriculum to introduce us to Javascript web Development and 2 level applications.
 
 This application was made with React Frontend with Firebase Serverless Backend.
-<img width="581" alt="Screen Shot 2019-08-13 at 3 14 20 PM" src="https://user-images.githubusercontent.com/16868451/62981066-23f21300-bddd-11e9-814e-9aa0088876d5.png">
-<img width="567" alt="Screen Shot 2019-08-13 at 3 23 55 PM" src="https://user-images.githubusercontent.com/16868451/62981574-65cf8900-bdde-11e9-81dd-3a7564a40fdc.png">
+
+you can find the app hosted on [Heroku](https://blooming-fjord-24130.herokuapp.com/gallery)
 
 we use:
 
@@ -26,5 +26,6 @@ we use:
 - Backend:
   - [Serverless with Firebase](https://firebase.google.com/)
  
-
+<img width="581" alt="Screen Shot 2019-08-13 at 3 14 20 PM" src="https://user-images.githubusercontent.com/16868451/62981066-23f21300-bddd-11e9-814e-9aa0088876d5.png">
+<img width="567" alt="Screen Shot 2019-08-13 at 3 23 55 PM" src="https://user-images.githubusercontent.com/16868451/62981574-65cf8900-bdde-11e9-81dd-3a7564a40fdc.png">
 <img width="1324" alt="Screen Shot 2019-08-13 at 2 08 15 PM" src="https://user-images.githubusercontent.com/16868451/62977498-dfae4500-bdd3-11e9-9929-4ea053c4be4b.png">
