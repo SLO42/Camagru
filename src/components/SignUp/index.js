@@ -21,6 +21,7 @@ const INITIAL_STATE = {
 	passwordOne: '',
 	passwordTwo: '',
 	isAdmin: false,
+	adminPass: '',
 	error: null,
 };
 
@@ -131,13 +132,15 @@ class SignUpFormBase extends Component {
 			passwordOne,
 			passwordTwo,
 			isAdmin,
+			adminPass,
 			error,
 		} = this.state;
 
 	const isInvalid = 
 		passwordOne !== passwordTwo ||
 		passwordOne === '' ||
-		email === '';
+		email === '' ||
+		(isAdmin &&  adminPass !== process.env.REACT_APP_ADMIN_PASS);
 
   return (
 	  <div>
@@ -162,7 +165,7 @@ class SignUpFormBase extends Component {
                 id="email"
                 label="Email Address"
                 name="email"
-                autoComplete="email"
+                autoComplete="none"
 				/>
             </Grid>
             <Grid item xs={12}>
@@ -176,7 +179,7 @@ class SignUpFormBase extends Component {
 				onChange={this.onChange}
                 type="password"
                 id="password"
-                autoComplete="current-password"
+                autoComplete="none"
 				/>
             </Grid>
 			<Grid item xs={12}>
@@ -190,7 +193,7 @@ class SignUpFormBase extends Component {
 				onChange={this.onChange}
                 type="password"
                 id="passwordTwo"
-                autoComplete="current-password"
+                autoComplete="none"
 				/>
             </Grid>
           </Grid>
@@ -203,6 +206,20 @@ class SignUpFormBase extends Component {
 				onChange={this.onChangeCheckbox}
 			/>
 		  </label>
+		  {isAdmin ? (
+			  <TextField
+				  variant="outlined"
+				  required
+				  fullWidth
+				  name="adminPass"
+				  label="Please Enter The Admin Password"
+				  value={adminPass}
+				  onChange={this.onChange}
+				  type="password"
+				  id="adminPass"
+				  autoComplete="none"
+				  />
+		  ) : null }
           <Button
             type="submit"
 			fullWidth
