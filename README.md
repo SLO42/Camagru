@@ -1,4 +1,5 @@
 ###### This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+##### Recreation of Instagram as a frontend Application with React as well as a Serverless backend with Firebase
 
 # **Welcome To My Camagru** 
 ##### This project was assigned via the 42 ciriculum to introduce us to Javascript web Development and 2 level applications.
